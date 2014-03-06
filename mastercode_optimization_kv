@@ -1,0 +1,116 @@
+function mastercode_optimization_kv
+%Author: Lakshmi Gururaja Rao
+% Date: February 28, 2014
+% FUNCTION: mastercode_optimization_kv
+% INPUTS:
+% x - vector of design parameters, these parameters will vary with
+% optimization
+% p - set of fixed parameters, these parameters will not change with
+% optimization
+% OUTPUTS:
+% maxAmp - maximum amplitude of mass, m1
+% X - array of position of mass, m1
+%
+% This function takes inputs of design variables and fixed parameters and
+% calculates the response of a mass spring system to a forcing function at
+% frequency omega using the function dva_kelvin_voigt and optimizes the
+% function using fmincon and patternsearch and plots the optimal response.
+
+
+clear
+close all
+omega = logspace(-1,0.5,1000); % frequency range
+
+% Fixed parameters
+mu = 0.25; % mass ratio
+m1 = 1; % lower mass
+k1 = 1; % lower spring
+F_0 = 1; % magnitude of forcing frequency
+
+% Calculated parameters
+omega1 = sqrt(k1/m1); % natural frequency of mass m1 and spring k1
+r = omega./omega1;
+
+% Setting the fixed parameter vector
+p.r = r;
+p.mu = mu; 
+p.m1 = m1;
+p.k1 = k1;
+p.omega1 = omega1;
+p.omega = omega;
+p.F_0 = F_0;
+
+%% Kelvin-Voigt (constant beta, zeta)
+
+% Design Variables:
+beta_kv = 0.8;
+zeta_kv = 0.2;
+
+x_kv = [beta_kv zeta_kv];
+
+[maxAmp_kv,X_kv]= dva_kelvin_voigt(x_kv,p);
+
+maxAmp_kv
+
+%%Plotting the response with frequency for KV
+
+plot(r,X_kv);
+
+hold on;
+
+%% Setting upper and lower bounds
+lb_x_kv=[0.1,1e-5];
+ub_x_kv=[2.5,0.6];
+
+%%Minimising the function with respect to the design variables using
+%%patternsearch
+
+options=optimset('display','iter','algorithm','interior-point','maxfunevals',100000);
+[xopt_kv_ps,fopt_kv_ps,flag_kv,output_kv]=patternsearch(@(x) dva_kelvin_voigt(x,p),x_kv,[],[],[],[],lb_x_kv,ub_x_kv,[],options);
+
+beta_opt_kv_ps=xopt_kv_ps(1);
+zeta_opt_kv_ps=xopt_kv_ps(2);
+
+
+[maxAmp_opt_kv_ps,X_opt_kv_ps]= dva_kelvin_voigt(xopt_kv_ps,p);
+
+
+%%Visualizing the results for patternsearch
+figure(1);
+plot(r,X_opt_kv_ps,'r');
+title('Kelvin Voigt Model with Constant \beta and \zeta and patternsearch');
+
+ylabel('Nondimensional amplitude');
+xlabel('r=\omega/\omega1');
+
+legend('Response','Optimal response');
+hold off;
+
+%%Minimizing the function with respect to design variables using 
+%%fmincon
+
+[xopt_kv_fmc,fopt_kv_fmc,flag_kv,output_kv]=fmincon(@(x) dva_kelvin_voigt(x,p),x_kv,[],[],[],[],lb_x_kv,ub_x_kv,[],options);
+
+beta_opt_kv_fmc=xopt_kv_fmc(1);
+zeta_opt_kv_fmc=xopt_kv_fmc(2);
+
+
+[maxAmp_opt_kv_fmc,X_opt_kv_fmc]= dva_kelvin_voigt(xopt_kv_fmc,p);
+
+
+
+%%Visualizing the results for fmincon
+figure(2);
+plot(r,X_kv);
+
+hold on;
+plot(r,X_opt_kv_fmc,'r');
+
+title('Kelvin Voigt Model with Constant \beta and \zeta and fmincon');
+
+ylabel('Nondimensional amplitude');
+xlabel('r=\omega/\omega1');
+
+legend('Response','Optimal response');
+
+
