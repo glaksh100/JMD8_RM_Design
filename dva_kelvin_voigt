@@ -1,0 +1,42 @@
+function [maxAmp,X] = dva_kelvin_voigt(x,p)
+
+% Author: Rebecca Corman
+% Date: January 27, 2014
+% FUNCTION: dva_kelvin_voigt
+% INPUTS:
+% x - vector of design parameters, these parameters will vary with
+% optimization
+% p - set of fixed parameters, these parameters will not change with
+% optimization
+% OUTPUTS:
+% maxAmp - maximum amplitude of mass, m1
+% X - array of position of mass, m1
+%
+% This function takes inputs of design variables and fixed parameters and
+% calculates the response of a mass-spring system to a forcing function at
+% frequency omega using the Kelvin-Voigt model.
+
+
+% Set parameters
+mu = p.mu;
+r = p.r;
+
+% Design Variables
+beta = x(1);
+zeta = x(2);
+
+
+
+X = zeros(size(r)); % Initialize X
+
+for i=1:length(r)    
+    % non-dimensional amplitude:
+    X(i) = sqrt(((2*zeta*r(i))^2+(r(i)^2-beta^2)^2)/...
+        ((2*zeta*r(i))^2*(r(i)^2-1+mu*r(i)^2)^2+...
+        (mu*r(i)^2*beta^2-(r(i)^2-1)*(r(i)^2-beta^2))^2));
+end
+
+% objective function:
+maxAmp = max(X);
+
+end
